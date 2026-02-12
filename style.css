@@ -8,6 +8,10 @@
     --btn-shadow: rgba(0, 123, 255, 0.4);
     --container-shadow: rgba(0, 0, 0, 0.1);
     --number-text-color: white;
+    --form-label-color: #555;
+    --form-input-bg: #f0f0f0;
+    --form-input-border: #ccc;
+    --form-input-focus-border: #007BFF;
 }
 
 html[data-theme='dark'] {
@@ -20,6 +24,10 @@ html[data-theme='dark'] {
     --btn-shadow: rgba(0, 137, 255, 0.4);
     --container-shadow: rgba(0, 0, 0, 0.4);
     --number-text-color: white;
+    --form-label-color: #bbb;
+    --form-input-bg: #3a3a3a;
+    --form-input-border: #555;
+    --form-input-focus-border: #0089ff;
 }
 
 body {
@@ -149,4 +157,78 @@ input:checked + .slider {
 
 input:checked + .slider:before {
     transform: translateX(22px);
+}
+
+/* Form Styles */
+h2 {
+    color: var(--h1-color);
+    margin-top: 30px;
+    margin-bottom: 20px;
+}
+
+.contact-form {
+    text-align: left;
+    max-width: 400px;
+    margin: 0 auto;
+    padding: 20px;
+    border-radius: 8px;
+    background-color: var(--container-bg); /* Use container background for form area */
+}
+
+.form-group {
+    margin-bottom: 15px;
+}
+
+.form-group label {
+    display: block;
+    margin-bottom: 5px;
+    font-weight: bold;
+    color: var(--form-label-color);
+}
+
+.contact-form input[type="text"],
+.contact-form input[type="email"],
+.contact-form textarea {
+    width: calc(100% - 20px); /* Adjust for padding */
+    padding: 10px;
+    border: 1px solid var(--form-input-border);
+    border-radius: 4px;
+    background-color: var(--form-input-bg);
+    color: var(--text-color);
+    font-size: 16px;
+    transition: border-color 0.3s, background-color 0.3s;
+}
+
+.contact-form input[type="text"]:focus,
+.contact-form input[type="email"]:focus,
+.contact-form textarea:focus {
+    border-color: var(--form-input-focus-border);
+    outline: none;
+}
+
+#submit-form-btn {
+    background: linear-gradient(145deg, #28a745, #218838); /* Green gradient for submit */
+    color: white;
+    padding: 12px 25px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 16px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 8px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 10px rgba(40, 167, 69, 0.4);
+    width: 100%;
+}
+
+#submit-form-btn:hover {
+    box-shadow: 0 6px 15px rgba(40, 167, 69, 0.5);
+    transform: translateY(-2px);
+}
+
+#submit-form-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
 }
