@@ -35,62 +35,96 @@ document.addEventListener('DOMContentLoaded', () => {
         themeToggle.addEventListener('change', toggleTheme);
     }
 
-    // Lotto Generator Logic
+    // Lotto Generator Logic (Only run if elements exist)
     const numbersContainer = document.getElementById('lotto-numbers');
     const generateBtn = document.getElementById('generate-btn');
 
-    const generateLottoNumbers = () => {
-        // Clear previous numbers with a fade-out effect
-        Array.from(numbersContainer.children).forEach((child, index) => {
-            setTimeout(() => {
-                child.style.transform = 'scale(0)';
-            }, index * 50);
-        });
-
-        setTimeout(() => {
-            numbersContainer.innerHTML = '';
-
-            const numbers = new Set();
-            while (numbers.size < 6) {
-                const randomNumber = Math.floor(Math.random() * 45) + 1;
-                numbers.add(randomNumber);
-            }
-
-            const sortedNumbers = Array.from(numbers).sort((a, b) => a - b);
-
-            sortedNumbers.forEach((number, index) => {
-                const numberDiv = document.createElement('div');
-                numberDiv.classList.add('number');
-                numberDiv.textContent = number;
-                
-                // Assign color based on number range
-                let color;
-                if (number <= 10) {
-                    color = '#fbc400'; // Yellow
-                } else if (number <= 20) {
-                    color = '#69c8f2'; // Blue
-                } else if (number <= 30) {
-                    color = '#ff7272'; // Red
-                } else if (number <= 40) {
-                    color = '#aaa'; // Gray/Black
-                } else {
-                    color = '#b0d840'; // Green
-                }
-                numberDiv.style.backgroundColor = color;
-                
-                // Staggered appearance animation
-                numberDiv.style.transform = 'scale(0)';
-                numbersContainer.appendChild(numberDiv);
+    if (generateBtn && numbersContainer) {
+        const generateLottoNumbers = () => {
+            // Clear previous numbers with a fade-out effect
+            Array.from(numbersContainer.children).forEach((child, index) => {
                 setTimeout(() => {
-                    numberDiv.style.transform = 'scale(1)';
-                }, index * 100);
+                    child.style.transform = 'scale(0)';
+                }, index * 50);
             });
-        }, 400); // Wait for fade-out to complete
-    };
 
-    if (generateBtn) {
+            setTimeout(() => {
+                numbersContainer.innerHTML = '';
+
+                const numbers = new Set();
+                while (numbers.size < 6) {
+                    const randomNumber = Math.floor(Math.random() * 45) + 1;
+                    numbers.add(randomNumber);
+                }
+
+                const sortedNumbers = Array.from(numbers).sort((a, b) => a - b);
+
+                sortedNumbers.forEach((number, index) => {
+                    const numberDiv = document.createElement('div');
+                    numberDiv.classList.add('number');
+                    numberDiv.textContent = number;
+                    
+                    // Assign color based on number range
+                    let color;
+                    if (number <= 10) {
+                        color = '#fbc400'; // Yellow
+                    } else if (number <= 20) {
+                        color = '#69c8f2'; // Blue
+                    } else if (number <= 30) {
+                        color = '#ff7272'; // Red
+                    } else if (number <= 40) {
+                        color = '#aaa'; // Gray/Black
+                    } else {
+                        color = '#b0d840'; // Green
+                    }
+                    numberDiv.style.backgroundColor = color;
+                    
+                    // Staggered appearance animation
+                    numberDiv.style.transform = 'scale(0)';
+                    numbersContainer.appendChild(numberDiv);
+                    setTimeout(() => {
+                        numberDiv.style.transform = 'scale(1)';
+                    }, index * 100);
+                });
+            }, 400); // Wait for fade-out to complete
+        };
+
         generateBtn.addEventListener('click', generateLottoNumbers);
         // Generate initial set of numbers on page load
         generateLottoNumbers();
+    }
+
+    // Fortune Generator Logic (Only run if elements exist)
+    const fortuneBtn = document.getElementById('fortune-btn');
+    const fortuneText = document.getElementById('fortune-text');
+
+    if (fortuneBtn && fortuneText) {
+        const fortunes = [
+            "오늘은 새로운 시작에 완벽한 날입니다. 용기를 내세요.",
+            "작은 변화가 큰 행운을 불러옵니다. 주변을 둘러보세요.",
+            "예상치 못한 곳에서 좋은 소식이 들려올 것입니다.",
+            "꾸준함이 결실을 맺는 날입니다. 하던 일을 계속 밀고 나가세요.",
+            "휴식이 필요한 시점입니다. 잠시 멈춰도 괜찮습니다.",
+            "귀인이 나타나 도움을 줄 것입니다. 열린 마음을 유지하세요.",
+            "금전운이 상승하는 날입니다. 작은 투자를 고려해보세요.",
+            "오랜 친구와의 만남이 에너지를 불어넣어 줄 것입니다.",
+            "새로운 것을 배우기에 좋은 날입니다. 도전해보세요.",
+            "긍정적인 생각이 좋은 결과를 가져옵니다. 웃음을 잃지 마세요."
+        ];
+
+        const drawFortune = () => {
+            fortuneText.style.opacity = 0; // Fade out
+
+            setTimeout(() => {
+                const randomIndex = Math.floor(Math.random() * fortunes.length);
+                fortuneText.textContent = fortunes[randomIndex];
+                fortuneText.style.opacity = 1; // Fade in
+            }, 300);
+        };
+
+        fortuneBtn.addEventListener('click', drawFortune);
+        
+        // Set initial text style
+        fortuneText.style.transition = 'opacity 0.3s ease-in-out';
     }
 });

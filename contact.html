@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="en">
+<html lang="ko">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>로또 번호 추첨기</title>
+    <title>문의 - 로또 번호 추첨기</title>
     <link rel="stylesheet" href="style.css">
     <script async src="https://pagead2.googlesyndication.com/pagead/js/adsbygoogle.js?client=ca-pub-4386144437468156"
      crossorigin="anonymous"></script>
@@ -32,11 +32,29 @@
     </header>
 
     <main>
-        <div class="container">
-            <h1>로또 번호 추첨기</h1>
-            <p class="site-description">매주 새로운 행운의 번호를 받아보세요. 저희 로또 번호 추첨기는 통계적 분석과 무작위성을 결합하여 독특한 번호 조합을 제공합니다. 사용법 페이지에서 저희의 번호 생성 방식에 대해 더 알아보세요.</p>
-            <div class="lotto-numbers" id="lotto-numbers"></div>
-            <button id="generate-btn">새 번호 받기</button>
+        <div class="content-page">
+            <h1>문의하기</h1>
+            <p>서비스에 대한 질문, 파트너십 제안, 또는 기타 의견이 있으시면 아래 양식을 통해 언제든지 문의해주세요. 저희는 사용자의 목소리에 귀 기울이고 있습니다.</p>
+
+            <form action="https://formspree.io/f/xdalarqz" method="POST" class="contact-form">
+                <div class="form-group">
+                    <label for="name">이름:</label>
+                    <input type="text" id="name" name="name" required>
+                </div>
+                <div class="form-group">
+                    <label for="email">이메일:</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                <div class="form-group">
+                    <label for="company">회사명 (선택 사항):</label>
+                    <input type="text" id="company" name="company">
+                </div>
+                <div class="form-group">
+                    <label for="message">메시지:</label>
+                    <textarea id="message" name="message" rows="5" required></textarea>
+                </div>
+                <button type="submit" id="submit-form-btn">문의 보내기</button>
+            </form>
         </div>
     </main>
 

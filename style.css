@@ -12,6 +12,10 @@
     --form-input-bg: #f0f0f0;
     --form-input-border: #ccc;
     --form-input-focus-border: #007BFF;
+    --header-bg: rgba(255, 255, 255, 0.8);
+    --footer-bg: #f1f1f1;
+    --link-color: #007BFF;
+    --link-hover-color: #0056b3;
 }
 
 html[data-theme='dark'] {
@@ -28,28 +32,91 @@ html[data-theme='dark'] {
     --form-input-bg: #3a3a3a;
     --form-input-border: #555;
     --form-input-focus-border: #0089ff;
+    --header-bg: rgba(42, 42, 42, 0.8);
+    --footer-bg: #2a2a2a;
+    --link-color: #0089ff;
+    --link-hover-color: #0061c2;
 }
 
 body {
     font-family: 'Arial', sans-serif;
-    display: flex;
-    justify-content: center;
-    align-items: center;
-    min-height: 100vh;
     background-color: var(--bg-color);
     color: var(--text-color);
     margin: 0;
+    padding-top: 80px; /* Space for fixed header */
     transition: background-color 0.3s, color 0.3s;
 }
 
+/* Header & Navigation */
+header {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    background-color: var(--header-bg);
+    backdrop-filter: blur(10px);
+    box-shadow: 0 2px 10px var(--container-shadow);
+    z-index: 1000;
+    transition: background-color 0.3s;
+}
+
+.header-container {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 20px;
+    height: 70px;
+}
+
+.logo {
+    font-size: 24px;
+    font-weight: bold;
+    color: var(--h1-color);
+    text-decoration: none;
+}
+
+nav ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 20px;
+}
+
+nav a {
+    text-decoration: none;
+    color: var(--link-color);
+    font-weight: bold;
+    font-size: 16px;
+    transition: color 0.3s;
+}
+
+nav a:hover {
+    color: var(--link-hover-color);
+}
+
+main {
+    padding: 20px;
+}
+
 .container {
-    position: relative;
     text-align: center;
     background-color: var(--container-bg);
     padding: 30px 40px;
     border-radius: 16px;
     box-shadow: 0 8px 32px var(--container-shadow);
     transition: background-color 0.3s;
+    max-width: 800px;
+    margin: 40px auto;
+}
+
+.site-description {
+    font-size: 1.1em;
+    line-height: 1.6;
+    color: var(--text-color);
+    margin: 20px 0 30px;
 }
 
 h1 {
@@ -107,9 +174,6 @@ h1 {
 
 /* Theme Switch Styles */
 .theme-switch-wrapper {
-    position: absolute;
-    top: 20px;
-    right: 20px;
     display: flex;
     align-items: center;
 }
@@ -159,20 +223,44 @@ input:checked + .slider:before {
     transform: translateX(22px);
 }
 
-/* Form Styles */
-h2 {
-    color: var(--h1-color);
-    margin-top: 30px;
+/* General Content Page Styles */
+.content-page {
+    background-color: var(--container-bg);
+    padding: 30px 40px;
+    border-radius: 16px;
+    box-shadow: 0 8px 32px var(--container-shadow);
+    max-width: 800px;
+    margin: 40px auto;
+    text-align: left;
+}
+
+.content-page h1 {
+    border-bottom: 2px solid var(--btn-grad-1);
+    padding-bottom: 10px;
     margin-bottom: 20px;
 }
 
+.content-page h2 {
+    color: var(--h1-color);
+    margin-top: 30px;
+    margin-bottom: 15px;
+}
+
+.content-page p {
+    line-height: 1.8;
+    margin-bottom: 15px;
+}
+
+.content-page ul {
+    line-height: 1.8;
+    padding-left: 20px;
+}
+
+/* Form Styles */
 .contact-form {
     text-align: left;
-    max-width: 400px;
+    max-width: 100%;
     margin: 0 auto;
-    padding: 20px;
-    border-radius: 8px;
-    background-color: var(--container-bg); /* Use container background for form area */
 }
 
 .form-group {
@@ -189,7 +277,7 @@ h2 {
 .contact-form input[type="text"],
 .contact-form input[type="email"],
 .contact-form textarea {
-    width: calc(100% - 20px); /* Adjust for padding */
+    width: calc(100% - 22px); /* Adjust for padding and border */
     padding: 10px;
     border: 1px solid var(--form-input-border);
     border-radius: 4px;
@@ -231,4 +319,113 @@ h2 {
 #submit-form-btn:active {
     transform: translateY(1px);
     box-shadow: 0 2px 8px rgba(40, 167, 69, 0.4);
+}
+
+/* Fortune Page Styles */
+.fortune-card {
+    background-color: var(--form-input-bg);
+    border: 1px solid var(--form-input-border);
+    border-radius: 8px;
+    padding: 30px 20px;
+    min-height: 100px;
+    margin: 30px auto;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    box-shadow: inset 0 2px 4px rgba(0,0,0,0.05);
+}
+
+#fortune-text {
+    font-size: 1.2em;
+    line-height: 1.6;
+    color: var(--text-color);
+    text-align: center;
+}
+
+#fortune-btn {
+    background: linear-gradient(145deg, #ffc107, #e0a800);
+    color: #333;
+    padding: 14px 28px;
+    text-align: center;
+    text-decoration: none;
+    display: inline-block;
+    font-size: 18px;
+    font-weight: bold;
+    cursor: pointer;
+    border: none;
+    border-radius: 12px;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(255, 193, 7, 0.4);
+}
+
+#fortune-btn:hover {
+    box-shadow: 0 6px 20px rgba(255, 193, 7, 0.5);
+    transform: translateY(-2px);
+}
+
+#fortune-btn:active {
+    transform: translateY(1px);
+    box-shadow: 0 2px 10px rgba(255, 193, 7, 0.4);
+}
+
+/* Footer */
+footer {
+    background-color: var(--footer-bg);
+    color: var(--text-color);
+    padding: 20px;
+    margin-top: 40px;
+    text-align: center;
+    border-top: 1px solid var(--form-input-border);
+    transition: background-color 0.3s, color 0.3s;
+}
+
+.footer-container {
+    max-width: 1200px;
+    margin: 0 auto;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.footer-container ul {
+    list-style: none;
+    margin: 0;
+    padding: 0;
+    display: flex;
+    gap: 15px;
+}
+
+.footer-container a {
+    color: var(--link-color);
+    text-decoration: none;
+}
+
+.footer-container a:hover {
+    text-decoration: underline;
+}
+
+/* Responsive */
+@media (max-width: 768px) {
+    body {
+        padding-top: 120px; /* Adjust for stacked header */
+    }
+
+    .header-container {
+        flex-direction: column;
+        height: auto;
+        padding: 15px;
+    }
+
+    nav {
+        margin-top: 10px;
+    }
+
+    nav ul {
+        gap: 15px;
+    }
+    
+    .footer-container {
+        flex-direction: column;
+        gap: 10px;
+    }
 }
