@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="ko">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>로또 통계 및 시뮬레이션 - 로또 번호 추첨기</title>
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+    <header>
+        <div class="header-container">
+            <a href="index.html" class="logo">로또 번호 추첨기</a>
+            <nav>
+                <ul>
+                    <li><a href="index.html">홈</a></li>
+                    <li><a href="fortune.html">오늘의 운세</a></li>
+                    <li><a href="history.html">로또 역사</a></li>
+                    <li><a href="stats.html">통계/시뮬레이션</a></li>
+                    <li><a href="about.html">소개</a></li>
+                    <li><a href="how-to-use.html">사용법</a></li>
+                    <li><a href="contact.html">문의</a></li>
+                </ul>
+            </nav>
+            <div class="theme-switch-wrapper">
+                <label class="theme-switch" for="theme-toggle">
+                    <input type="checkbox" id="theme-toggle" />
+                    <span class="slider round"></span>
+                </label>
+            </div>
+        </div>
+    </header>
+
+    <main>
+        <div class="content-page">
+            <h1>로또 통계 및 시뮬레이션</h1>
+            <p>로또 번호에 숨겨진 통계적 사실을 알아보고, 직접 번호를 선택하여 행운을 시험해보세요. 이 페이지의 모든 데이터와 시뮬레이션은 재미와 참고를 위한 것입니다.</p>
+
+            <h2 class="stats-header">로또 6/45 당첨 확률</h2>
+            <div id="probability-info">
+                <p>로또 6/45는 1부터 45까지의 숫자 중 6개를 맞히는 게임입니다. 각 등수별 당첨 확률은 다음과 같습니다.</p>
+                <ul>
+                    <li><strong>1등 (6개 번호 일치):</strong> 1 / 8,145,060</li>
+                    <li><strong>2등 (5개 번호 일치 + 보너스 번호 일치):</strong> 1 / 1,357,510 (보너스 번호 개념이 포함될 경우)</li>
+                    <li><strong>3등 (5개 번호 일치):</strong> 1 / 35,724</li>
+                    <li><strong>4등 (4개 번호 일치):</strong> 1 / 733</li>
+                    <li><strong>5등 (3개 번호 일치):</strong> 1 / 45</li>
+                </ul>
+                <p class="small-text">※ 2등과 3등 확률은 보너스 번호의 포함 여부에 따라 달라질 수 있으며, 여기서는 일반적인 로또 규칙을 기준으로 계산되었습니다.</p>
+            </div>
+
+            <hr class="section-divider">
+
+            <h2 class="stats-header">행운 번호 시뮬레이션</h2>
+            <p>1부터 45까지의 숫자 중 6개를 선택하고 '결과 확인' 버튼을 누르면, 가상의 당첨번호와 비교하여 결과를 알려드립니다.</p>
+            <div class="simulation-container">
+                <div class="number-selector" id="number-selector">
+                    <!-- Number inputs will be generated here by JS -->
+                </div>
+                <button id="run-simulation-btn" class="action-btn" disabled>번호를 모두 선택하세요</button>
+                <div id="simulation-result" class="simulation-result">
+                    <!-- Simulation result will be displayed here -->
+                </div>
+            </div>
+
+            <hr class="section-divider">
+
+            <h2 class="stats-header">역대 당첨 번호 순위</h2>
+            <p>과거 로또 추첨에서 가장 많이 나온 번호는 무엇일까요? 아래 순위표에서 확인해보세요. (샘플 데이터 기반)</p>
+            <div class="leaderboard-container">
+                <table id="leaderboard-table">
+                    <thead>
+                        <tr>
+                            <th>순위</th>
+                            <th>번호</th>
+                            <th>나온 횟수</th>
+                        </tr>
+                    </thead>
+                    <tbody id="leaderboard-body">
+                        <!-- Leaderboard data will be loaded here -->
+                    </tbody>
+                </table>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-container">
+            <p>&copy; 2026 로또 번호 추첨기. All Rights Reserved.</p>
+            <ul>
+                <li><a href="privacy.html">개인정보처리방침</a></li>
+                <li><a href="terms.html">이용약관</a></li>
+            </ul>
+        </div>
+    </footer>
+
+    <script src="main.js"></script>
+</body>
+</html>

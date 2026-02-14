@@ -127,4 +127,117 @@ document.addEventListener('DOMContentLoaded', () => {
         // Set initial text style
         fortuneText.style.transition = 'opacity 0.3s ease-in-out';
     }
+
+    // Stats Page Logic (Only run if elements exist)
+    const numberSelector = document.getElementById('number-selector');
+    const runSimulationBtn = document.getElementById('run-simulation-btn');
+    const simulationResultDiv = document.getElementById('simulation-result');
+    const leaderboardBody = document.getElementById('leaderboard-body');
+
+    if (numberSelector && runSimulationBtn && simulationResultDiv && leaderboardBody) {
+        let selectedNumbers = [];
+
+        // --- Number Selector Generation ---
+        const generateNumberSelector = () => {
+            for (let i = 1; i <= 45; i++) {
+                const numberCircle = document.createElement('div');
+                numberCircle.classList.add('number-circle');
+                numberCircle.textContent = i;
+                numberCircle.dataset.number = i;
+                numberSelector.appendChild(numberCircle);
+
+                numberCircle.addEventListener('click', () => {
+                    const num = parseInt(numberCircle.dataset.number);
+                    if (numberCircle.classList.contains('selected')) {
+                        numberCircle.classList.remove('selected');
+                        selectedNumbers = selectedNumbers.filter(n => n !== num);
+                    } else {
+                        if (selectedNumbers.length < 6) {
+                            numberCircle.classList.add('selected');
+                            selectedNumbers.push(num);
+                        } else {
+                            alert('6개의 번호만 선택할 수 있습니다.');
+                        }
+                    }
+                    updateSimulationButtonState();
+                });
+            }
+        };
+
+        // --- Update Simulation Button State ---
+        const updateSimulationButtonState = () => {
+            if (selectedNumbers.length === 6) {
+                runSimulationBtn.disabled = false;
+                runSimulationBtn.textContent = '결과 확인';
+            } else {
+                runSimulationBtn.disabled = true;
+                runSimulationBtn.textContent = `번호를 ${6 - selectedNumbers.length}개 더 선택하세요`;
+            }
+        };
+
+        // --- Lotto Simulation Logic ---
+        const generateRandomLottoNumbers = () => {
+            const numbers = new Set();
+            while (numbers.size < 6) {
+                numbers.add(Math.floor(Math.random() * 45) + 1);
+            }
+            return Array.from(numbers).sort((a, b) => a - b);
+        };
+
+        const compareLottoNumbers = (myNumbers, winningNumbers) => {
+            const matches = myNumbers.filter(num => winningNumbers.includes(num));
+            return matches;
+        };
+
+        const displaySimulationResult = (myNumbers, winningNumbers, matchedNumbers) => {
+            simulationResultDiv.innerHTML = `
+                <p><strong>내가 선택한 번호:</strong></p>
+                <div class="result-numbers-display">
+                    ${myNumbers.map(num => `<div class="result-number ${matchedNumbers.includes(num) ? 'matched' : ''}">${num}</div>`).join('')}
+                </div>
+                <p><strong>이번 회차 당첨 번호:</strong></p>
+                <div class="result-numbers-display">
+                    ${winningNumbers.map(num => `<div class="result-number ${matchedNumbers.includes(num) ? 'matched' : ''}">${num}</div>`).join('')}
+                </div>
+                <p><strong>총 ${matchedNumbers.length}개 일치!</strong></p>
+            `;
+        };
+
+        runSimulationBtn.addEventListener('click', () => {
+            if (selectedNumbers.length === 6) {
+                const winningNumbers = generateRandomLottoNumbers();
+                const matchedNumbers = compareLottoNumbers(selectedNumbers, winningNumbers);
+                displaySimulationResult(selectedNumbers, winningNumbers, matchedNumbers);
+            }
+        });
+
+        // --- Leaderboard Logic (Sample Data) ---
+        const populateLeaderboard = () => {
+            // Sample data - in a real application, this would come from an API or database
+            const sampleFrequencies = {
+                1: 15, 2: 12, 3: 18, 4: 10, 5: 20, 6: 14, 7: 17, 8: 11, 9: 19, 10: 13,
+                11: 22, 12: 16, 13: 21, 14: 9, 15: 25, 16: 8, 17: 23, 18: 7, 19: 24, 20: 6,
+                21: 26, 22: 5, 23: 27, 24: 4, 25: 28, 26: 3, 27: 29, 28: 2, 29: 30, 30: 1,
+                31: 32, 32: 31, 33: 34, 34: 33, 35: 36, 36: 35, 37: 38, 38: 37, 39: 40, 40: 39,
+                41: 42, 42: 41, 43: 44, 44: 43, 45: 45
+            };
+
+            const sortedFrequencies = Object.entries(sampleFrequencies)
+                .sort(([, freqA], [, freqB]) => freqB - freqA); // Sort by frequency descending
+
+            leaderboardBody.innerHTML = ''; // Clear existing content
+
+            sortedFrequencies.forEach(([number, count], index) => {
+                const row = leaderboardBody.insertRow();
+                row.insertCell(0).textContent = index + 1;
+                row.insertCell(1).textContent = number;
+                row.insertCell(2).textContent = count;
+            });
+        };
+        
+        // Initialize functions
+        generateNumberSelector();
+        updateSimulationButtonState();
+        populateLeaderboard();
+    }
 });
