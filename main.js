@@ -1,243 +1,250 @@
 document.addEventListener('DOMContentLoaded', () => {
+    // --- Firebase Setup (IMPORTANT!) ---
+    // 1. Create a project on https://firebase.google.com/
+    // 2. Go to Project settings > General, and "Add Firebase to your web app".
+    // 3. Copy the firebaseConfig object here.
+    const firebaseConfig = {
+        apiKey: "YOUR_API_KEY",
+        authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
+        projectId: "YOUR_PROJECT_ID",
+        storageBucket: "YOUR_PROJECT_ID.appspot.com",
+        messagingSenderId: "YOUR_SENDER_ID",
+        appId: "YOUR_APP_ID"
+    };
+
+    let db;
+    try {
+        if (firebaseConfig.apiKey !== "YOUR_API_KEY") {
+            firebase.initializeApp(firebaseConfig);
+            db = firebase.firestore();
+            console.log("Firebase initialized successfully.");
+        } else {
+            console.warn("Firebase is not configured. Please fill in firebaseConfig in main.js to enable saving/loading numbers.");
+        }
+    } catch (e) {
+        console.error("Could not initialize Firebase. Check your config.", e);
+    }
+
     // Theme Switch Logic
     const themeToggle = document.getElementById('theme-toggle');
     const docElement = document.documentElement;
-
-    // Function to apply a theme
     const applyTheme = (theme) => {
         docElement.setAttribute('data-theme', theme);
         localStorage.setItem('lotto_theme', theme);
-        if (themeToggle) {
-            themeToggle.checked = theme === 'dark';
-        }
+        if (themeToggle) themeToggle.checked = theme === 'dark';
     };
-
-    // Function to toggle between light and dark
     const toggleTheme = () => {
         const currentTheme = localStorage.getItem('lotto_theme') || 'light';
-        const newTheme = currentTheme === 'dark' ? 'light' : 'dark';
-        applyTheme(newTheme);
+        applyTheme(currentTheme === 'dark' ? 'light' : 'dark');
     };
-
-    // Check for saved theme in localStorage or system preference
     const savedTheme = localStorage.getItem('lotto_theme');
     const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    if (savedTheme) applyTheme(savedTheme);
+    else if (prefersDark) applyTheme('dark');
+    else applyTheme('light');
+    if (themeToggle) themeToggle.addEventListener('change', toggleTheme);
 
-    if (savedTheme) {
-        applyTheme(savedTheme);
-    } else if (prefersDark) {
-        applyTheme('dark');
-    } else {
-        applyTheme('light');
-    }
-
-    if (themeToggle) {
-        themeToggle.addEventListener('change', toggleTheme);
-    }
-
-    // Lotto Generator Logic (Only run if elements exist)
+    // Lotto Generator Logic
     const numbersContainer = document.getElementById('lotto-numbers');
     const generateBtn = document.getElementById('generate-btn');
-
     if (generateBtn && numbersContainer) {
         const generateLottoNumbers = () => {
-            // Clear previous numbers with a fade-out effect
             Array.from(numbersContainer.children).forEach((child, index) => {
-                setTimeout(() => {
-                    child.style.transform = 'scale(0)';
-                }, index * 50);
+                setTimeout(() => { child.style.transform = 'scale(0)'; }, index * 50);
             });
-
             setTimeout(() => {
                 numbersContainer.innerHTML = '';
-
                 const numbers = new Set();
                 while (numbers.size < 6) {
-                    const randomNumber = Math.floor(Math.random() * 45) + 1;
-                    numbers.add(randomNumber);
+                    numbers.add(Math.floor(Math.random() * 45) + 1);
                 }
-
                 const sortedNumbers = Array.from(numbers).sort((a, b) => a - b);
-
                 sortedNumbers.forEach((number, index) => {
                     const numberDiv = document.createElement('div');
                     numberDiv.classList.add('number');
                     numberDiv.textContent = number;
-                    
-                    // Assign color based on number range
                     let color;
-                    if (number <= 10) {
-                        color = '#fbc400'; // Yellow
-                    } else if (number <= 20) {
-                        color = '#69c8f2'; // Blue
-                    } else if (number <= 30) {
-                        color = '#ff7272'; // Red
-                    } else if (number <= 40) {
-                        color = '#aaa'; // Gray/Black
-                    } else {
-                        color = '#b0d840'; // Green
-                    }
+                    if (number <= 10) color = '#fbc400';
+                    else if (number <= 20) color = '#69c8f2';
+                    else if (number <= 30) color = '#ff7272';
+                    else if (number <= 40) color = '#aaa';
+                    else color = '#b0d840';
                     numberDiv.style.backgroundColor = color;
-                    
-                    // Staggered appearance animation
                     numberDiv.style.transform = 'scale(0)';
                     numbersContainer.appendChild(numberDiv);
-                    setTimeout(() => {
-                        numberDiv.style.transform = 'scale(1)';
-                    }, index * 100);
+                    setTimeout(() => { numberDiv.style.transform = 'scale(1)'; }, index * 100);
                 });
-            }, 400); // Wait for fade-out to complete
+            }, 400);
         };
-
         generateBtn.addEventListener('click', generateLottoNumbers);
-        // Generate initial set of numbers on page load
         generateLottoNumbers();
     }
 
-    // Fortune Generator Logic (Only run if elements exist)
-    const fortuneBtn = document.getElementById('fortune-btn');
-    const fortuneText = document.getElementById('fortune-text');
+    // --- AI & Firebase Features Logic ---
+    const dreamInput = document.getElementById('dream-input');
+    const dreamBtn = document.getElementById('dream-btn');
+    const strategyBtn = document.getElementById('strategy-btn');
+    const loading = document.getElementById('loading');
+    const dreamResultContainer = document.getElementById('dream-result-container');
+    const dreamResult = document.getElementById('dream-result');
+    const dreamExplanation = document.getElementById('dream-explanation');
+    const loadSavedBtn = document.getElementById('load-saved-btn');
+    const savedNumbersList = document.getElementById('saved-numbers-list');
 
-    if (fortuneBtn && fortuneText) {
-        const fortunes = [
-            "오늘은 새로운 시작에 완벽한 날입니다. 용기를 내세요.",
-            "작은 변화가 큰 행운을 불러옵니다. 주변을 둘러보세요.",
-            "예상치 못한 곳에서 좋은 소식이 들려올 것입니다.",
-            "꾸준함이 결실을 맺는 날입니다. 하던 일을 계속 밀고 나가세요.",
-            "휴식이 필요한 시점입니다. 잠시 멈춰도 괜찮습니다.",
-            "귀인이 나타나 도움을 줄 것입니다. 열린 마음을 유지하세요.",
-            "금전운이 상승하는 날입니다. 작은 투자를 고려해보세요.",
-            "오랜 친구와의 만남이 에너지를 불어넣어 줄 것입니다.",
-            "새로운 것을 배우기에 좋은 날입니다. 도전해보세요.",
-            "긍정적인 생각이 좋은 결과를 가져옵니다. 웃음을 잃지 마세요."
+    if (dreamBtn && strategyBtn && loadSavedBtn) {
+        const RECENT_WINNING_NUMBERS = [
+            { round: 1105, numbers: [6, 16, 34, 37, 39, 40] },
+            { round: 1104, numbers: [1, 9, 12, 28, 38, 44] },
+            { round: 1103, numbers: [3, 4, 9, 30, 33, 36] },
+            { round: 1102, numbers: [14, 20, 26, 31, 35, 45] },
+            { round: 1101, numbers: [5, 11, 15, 23, 33, 41] },
         ];
 
-        const drawFortune = () => {
-            fortuneText.style.opacity = 0; // Fade out
-
-            setTimeout(() => {
-                const randomIndex = Math.floor(Math.random() * fortunes.length);
-                fortuneText.textContent = fortunes[randomIndex];
-                fortuneText.style.opacity = 1; // Fade in
-            }, 300);
-        };
-
-        fortuneBtn.addEventListener('click', drawFortune);
-        
-        // Set initial text style
-        fortuneText.style.transition = 'opacity 0.3s ease-in-out';
-    }
-
-    // Stats Page Logic (Only run if elements exist)
-    const numberSelector = document.getElementById('number-selector');
-    const runSimulationBtn = document.getElementById('run-simulation-btn');
-    const simulationResultDiv = document.getElementById('simulation-result');
-    const leaderboardBody = document.getElementById('leaderboard-body');
-
-    if (numberSelector && runSimulationBtn && simulationResultDiv && leaderboardBody) {
-        let selectedNumbers = [];
-
-        // --- Number Selector Generation ---
-        const generateNumberSelector = () => {
-            for (let i = 1; i <= 45; i++) {
-                const numberCircle = document.createElement('div');
-                numberCircle.classList.add('number-circle');
-                numberCircle.textContent = i;
-                numberCircle.dataset.number = i;
-                numberSelector.appendChild(numberCircle);
-
-                numberCircle.addEventListener('click', () => {
-                    const num = parseInt(numberCircle.dataset.number);
-                    if (numberCircle.classList.contains('selected')) {
-                        numberCircle.classList.remove('selected');
-                        selectedNumbers = selectedNumbers.filter(n => n !== num);
-                    } else {
-                        if (selectedNumbers.length < 6) {
-                            numberCircle.classList.add('selected');
-                            selectedNumbers.push(num);
-                        } else {
-                            alert('6개의 번호만 선택할 수 있습니다.');
-                        }
-                    }
-                    updateSimulationButtonState();
-                });
+        const saveLottoResult = (numbers, explanation) => {
+            if (!db) {
+                console.log("Firebase not configured. Skipping save.");
+                return;
             }
-        };
-
-        // --- Update Simulation Button State ---
-        const updateSimulationButtonState = () => {
-            if (selectedNumbers.length === 6) {
-                runSimulationBtn.disabled = false;
-                runSimulationBtn.textContent = '결과 확인';
-            } else {
-                runSimulationBtn.disabled = true;
-                runSimulationBtn.textContent = `번호를 ${6 - selectedNumbers.length}개 더 선택하세요`;
-            }
-        };
-
-        // --- Lotto Simulation Logic ---
-        const generateRandomLottoNumbers = () => {
-            const numbers = new Set();
-            while (numbers.size < 6) {
-                numbers.add(Math.floor(Math.random() * 45) + 1);
-            }
-            return Array.from(numbers).sort((a, b) => a - b);
-        };
-
-        const compareLottoNumbers = (myNumbers, winningNumbers) => {
-            const matches = myNumbers.filter(num => winningNumbers.includes(num));
-            return matches;
-        };
-
-        const displaySimulationResult = (myNumbers, winningNumbers, matchedNumbers) => {
-            simulationResultDiv.innerHTML = `
-                <p><strong>내가 선택한 번호:</strong></p>
-                <div class="result-numbers-display">
-                    ${myNumbers.map(num => `<div class="result-number ${matchedNumbers.includes(num) ? 'matched' : ''}">${num}</div>`).join('')}
-                </div>
-                <p><strong>이번 회차 당첨 번호:</strong></p>
-                <div class="result-numbers-display">
-                    ${winningNumbers.map(num => `<div class="result-number ${matchedNumbers.includes(num) ? 'matched' : ''}">${num}</div>`).join('')}
-                </div>
-                <p><strong>총 ${matchedNumbers.length}개 일치!</strong></p>
-            `;
-        };
-
-        runSimulationBtn.addEventListener('click', () => {
-            if (selectedNumbers.length === 6) {
-                const winningNumbers = generateRandomLottoNumbers();
-                const matchedNumbers = compareLottoNumbers(selectedNumbers, winningNumbers);
-                displaySimulationResult(selectedNumbers, winningNumbers, matchedNumbers);
-            }
-        });
-
-        // --- Leaderboard Logic (Sample Data) ---
-        const populateLeaderboard = () => {
-            // Sample data - in a real application, this would come from an API or database
-            const sampleFrequencies = {
-                1: 15, 2: 12, 3: 18, 4: 10, 5: 20, 6: 14, 7: 17, 8: 11, 9: 19, 10: 13,
-                11: 22, 12: 16, 13: 21, 14: 9, 15: 25, 16: 8, 17: 23, 18: 7, 19: 24, 20: 6,
-                21: 26, 22: 5, 23: 27, 24: 4, 25: 28, 26: 3, 27: 29, 28: 2, 29: 30, 30: 1,
-                31: 32, 32: 31, 33: 34, 34: 33, 35: 36, 36: 35, 37: 38, 38: 37, 39: 40, 40: 39,
-                41: 42, 42: 41, 43: 44, 44: 43, 45: 45
-            };
-
-            const sortedFrequencies = Object.entries(sampleFrequencies)
-                .sort(([, freqA], [, freqB]) => freqB - freqA); // Sort by frequency descending
-
-            leaderboardBody.innerHTML = ''; // Clear existing content
-
-            sortedFrequencies.forEach(([number, count], index) => {
-                const row = leaderboardBody.insertRow();
-                row.insertCell(0).textContent = index + 1;
-                row.insertCell(1).textContent = number;
-                row.insertCell(2).textContent = count;
+            db.collection("savedNumbers").add({
+                numbers: numbers,
+                explanation: explanation,
+                createdAt: firebase.firestore.FieldValue.serverTimestamp()
+            })
+            .then((docRef) => {
+                console.log("Document written with ID: ", docRef.id);
+            })
+            .catch((error) => {
+                console.error("Error adding document: ", error);
             });
         };
-        
-        // Initialize functions
-        generateNumberSelector();
-        updateSimulationButtonState();
-        populateLeaderboard();
+
+        const displayAIResult = (result) => {
+            dreamResult.innerHTML = '';
+            if (!result || !result.numbers || !result.explanation) {
+                console.error("Invalid AI response format:", result);
+                dreamExplanation.textContent = 'AI 응답 형식이 올바르지 않습니다. 다시 시도해 주세요.';
+                dreamResultContainer.style.display = 'block';
+                return;
+            }
+            const sortedNumbers = result.numbers.sort((a, b) => a - b);
+            sortedNumbers.forEach((number, index) => {
+                const numberDiv = document.createElement('div');
+                numberDiv.classList.add('number');
+                numberDiv.textContent = number;
+                let color;
+                if (number <= 10) color = '#fbc400';
+                else if (number <= 20) color = '#69c8f2';
+                else if (number <= 30) color = '#ff7272';
+                else if (number <= 40) color = '#aaa';
+                else color = '#b0d840';
+                numberDiv.style.backgroundColor = color;
+                numberDiv.style.transform = 'scale(0)';
+                dreamResult.appendChild(numberDiv);
+                setTimeout(() => { numberDiv.style.transform = 'scale(1)'; }, index * 100);
+            });
+            dreamExplanation.textContent = result.explanation;
+            dreamResultContainer.style.display = 'block';
+
+            // Save the result to Firestore
+            saveLottoResult(sortedNumbers, result.explanation);
+        };
+
+        const callOpenAI = async (prompt) => {
+            loading.style.display = 'block';
+            dreamResultContainer.style.display = 'none';
+            dreamBtn.disabled = true;
+            strategyBtn.disabled = true;
+
+            const apiKey = 'YOUR_OPENAI_API_KEY';
+            if (apiKey === 'YOUR_OPENAI_API_KEY') {
+                alert('OpenAI API 키를 main.js 파일에 입력해주세요!');
+                loading.style.display = 'none';
+                dreamBtn.disabled = false;
+                strategyBtn.disabled = false;
+                return;
+            }
+
+            const apiUrl = 'https://api.openai.com/v1/chat/completions';
+            try {
+                const response = await fetch(apiUrl, {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${apiKey}\` },
+                    body: JSON.stringify({
+                        model: 'gpt-3.5-turbo-0125',
+                        messages: [{ role: 'user', content: prompt }],
+                        response_format: { type: "json_object" }
+                    })
+                });
+                if (!response.ok) throw new Error(\`OpenAI API error: \${response.statusText}\`);
+                const data = await response.json();
+                const aiResponse = JSON.parse(data.choices[0].message.content);
+                displayAIResult(aiResponse);
+            } catch (error) {
+                console.error('Error fetching from OpenAI:', error);
+                dreamExplanation.textContent = 'AI 분석 중 오류가 발생했습니다. API 키를 확인하거나 잠시 후 다시 시도해주세요.';
+                dreamResult.innerHTML = '';
+                dreamResultContainer.style.display = 'block';
+            } finally {
+                loading.style.display = 'none';
+                dreamBtn.disabled = false;
+                strategyBtn.disabled = false;
+            }
+        };
+
+        dreamBtn.addEventListener('click', () => {
+            const dreamText = dreamInput.value;
+            if (!dreamText.trim()) {
+                alert('꿈 내용을 입력해주세요.');
+                return;
+            }
+            const dreamPrompt = \`사용자가 입력한 다음 꿈 내용을 분석해서, 한국의 로또 6/45 형식에 맞는 행운의 숫자 6개를 추천해줘. 숫자는 1부터 45 사이의 정수여야 하고, 서로 중복되면 안 돼. 꿈 내용과 숫자를 연관지어 흥미로운 해설을 1~2문장으로 덧붙여줘. 입력된 꿈 내용: "\${dreamText}" 결과는 반드시 다음 JSON 형식에 맞춰서 반환해줘. 다른 말은 절대 추가하지 마. { "numbers": [1, 2, 3, 4, 5, 6], "explanation": "해설입니다." }\`;
+            callOpenAI(dreamPrompt);
+        });
+
+        strategyBtn.addEventListener('click', () => {
+            const dataContext = JSON.stringify(RECENT_WINNING_NUMBERS);
+            const strategyPrompt = \`너는 로또 번호 분석 전문가야. 다음 최신 당첨 번호 데이터를 바탕으로 전략적인 로또 번호 6개를 추천해줘. 최신 당첨 번호 데이터 (최신순): \${dataContext}. 분석 시, 1. 미출현 번호, 2. 홀짝 비율, 3. 연속 번호 포함 여부를 고려해줘. 결과적으로 추천하는 6개의 번호와 그 이유를 흥미롭게 설명해줘. 숫자는 1부터 45 사이의 정수여야 하고, 서로 중복되면 안 돼. 결과는 반드시 다음 JSON 형식에 맞춰서 반환해줘. 다른 말은 절대 추가하지 마. { "numbers": [7, 13, 19, 21, 35, 42], "explanation": "분석 결과입니다." }\`;
+            callOpenAI(strategyPrompt);
+        });
+
+        loadSavedBtn.addEventListener('click', async () => {
+            if (!db) {
+                alert("Firebase가 설정되지 않았습니다. main.js 파일에서 firebaseConfig를 확인해주세요.");
+                return;
+            }
+            savedNumbersList.innerHTML = '<div class="spinner"></div>';
+            try {
+                const snapshot = await db.collection("savedNumbers").orderBy("createdAt", "desc").limit(10).get();
+                if (snapshot.empty) {
+                    savedNumbersList.innerHTML = '<p>저장된 번호가 없습니다.</p>';
+                    return;
+                }
+                savedNumbersList.innerHTML = '';
+                snapshot.forEach(doc => {
+                    const item = doc.data();
+                    const itemDiv = document.createElement('div');
+                    itemDiv.className = 'saved-item';
+                    
+                    const numbersHTML = item.numbers.map(number => {
+                        let color;
+                        if (number <= 10) color = '#fbc400';
+                        else if (number <= 20) color = '#69c8f2';
+                        else if (number <= 30) color = '#ff7272';
+                        else if (number <= 40) color = '#aaa';
+                        else color = '#b0d840';
+                        return \`<div class="number" style="background-color: \${color}; transform: scale(0.8);">${number}</div>\`;
+                    }).join('');
+
+                    itemDiv.innerHTML = \`
+                        <div class="lotto-numbers">\${numbersHTML}</div>
+                        <p>\${item.explanation}</p>
+                    \`;
+                    savedNumbersList.appendChild(itemDiv);
+                });
+            } catch (error) {
+                console.error("Error loading saved numbers: ", error);
+                savedNumbersList.innerHTML = '<p>번호를 불러오는 중 오류가 발생했습니다.</p>';
+            }
+        });
     }
 });

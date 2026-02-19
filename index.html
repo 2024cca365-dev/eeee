@@ -38,6 +38,31 @@
             <h1>로또 번호 추첨기</h1>
             <p class="site-description">매주 새로운 행운의 번호를 받아보세요. 저희 로또 번호 추첨기는 통계적 분석과 무작위성을 결합하여 독특한 번호 조합을 제공합니다. 사용법 페이지에서 저희의 번호 생성 방식에 대해 더 알아보세요.</p>
             <div class="lotto-numbers" id="lotto-numbers"></div>
+
+            <div class="dream-container">
+                <h2>AI로 행운 번호 받기</h2>
+                <p>꿈 내용을 입력하거나, 최신 당첨 번호 기반의 데이터 분석을 요청하여 AI 추천 번호를 받아보세요.</p>
+                <textarea id="dream-input" placeholder="여기에 꿈 내용을 입력하세요... (꿈 해몽 시)" rows="4"></textarea>
+                <div class="ai-buttons">
+                    <button id="dream-btn">꿈 해몽으로 번호 받기</button>
+                    <button id="strategy-btn">AI 데이터 분석으로 받기</button>
+                </div>
+                <div id="loading" style="display: none; margin-top: 20px;">
+                    <div class="spinner"></div>
+                    <p>AI가 분석하고 있습니다. 잠시만 기다려 주세요...</p>
+                </div>
+                <div id="dream-result-container" style="display: none; margin-top: 20px;">
+                    <div id="dream-result" class="lotto-numbers"></div>
+                    <div id="dream-explanation"></div>
+                </div>
+            </div>
+
+            <div class="saved-numbers-container">
+                <h2>내가 저장한 행운 번호</h2>
+                <button id="load-saved-btn">내 번호 불러오기</button>
+                <div id="saved-numbers-list"></div>
+            </div>
+
             <div class="action-buttons">
                 <button id="generate-btn">새 번호 받기</button>
                 <a href="https://www.dhlottery.co.kr/" target="_blank" rel="noopener noreferrer" id="purchase-btn">로또 구매하기</a>
@@ -54,6 +79,10 @@
             </ul>
         </div>
     </footer>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/9.6.1/firebase-firestore-compat.js"></script>
 
     <script src="main.js"></script>
 </body>
