@@ -22,6 +22,25 @@ document.addEventListener('DOMContentLoaded', () => {
         console.error("Could not initialize Firebase. Check your config.", e);
     }
 
+    // --- Helper function for number colors ---
+    const getLottoNumberColor = (number) => {
+        if (number <= 10) return '#fbc400';
+        if (number <= 20) return '#69c8f2';
+        if (number <= 30) return '#ff7272';
+        if (number <= 40) return '#aaa';
+        return '#b0d840';
+    };
+
+    const saveLottoResult = (numbers, explanation) => {
+        if (!db) { console.log("Firebase not configured. Skipping save."); return; }
+        db.collection("savedNumbers").add({
+            numbers: numbers,
+            explanation: explanation,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(docRef => console.log("Result saved with ID: ", docRef.id))
+          .catch(error => console.error("Error saving result: ", error));
+    };
+
     // --- General Elements & Theme Logic ---
     const themeToggle = document.getElementById('theme-toggle');
     const docElement = document.documentElement;
@@ -46,12 +65,11 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Generic AI Calling Function ---
     const callAI = async (prompt, displayCallback) => {
         loading.style.display = 'block';
-        // Disable all buttons during AI call
         document.querySelectorAll('button').forEach(btn => btn.disabled = true);
 
-        const apiKey = 'YOUR_OPENAI_API_KEY';
+        const apiKey = 'YOUR_OPENAI_API_KEY'; // IMPORTANT: User must replace this
         if (apiKey === 'YOUR_OPENAI_API_KEY') {
-            alert('OpenAI API 키를 main.js 파일에 입력해주세요!');
+            alert('OpenAI API 키를 main.js 파일에 입력해주세요! API 키가 없으면 AI 기능을 사용할 수 없습니다.');
             loading.style.display = 'none';
             document.querySelectorAll('button').forEach(btn => btn.disabled = false);
             return;
@@ -61,15 +79,25 @@ document.addEventListener('DOMContentLoaded', () => {
         try {
             const response = await fetch(apiUrl, {
                 method: 'POST',
-                headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${apiKey}\` },
+                headers: { 'Content-Type': 'application/json', 'Authorization': `Bearer ${apiKey}` },
                 body: JSON.stringify({
                     model: 'gpt-3.5-turbo-0125',
-                    messages: [{ role: 'user', content: prompt }],
+                    messages: [
+                        { role: 'system', content: '너는 로또 해몽 및 분석 전문가야. 결과는 반드시 numbers와 explanation을 포함한 JSON으로 답해줘.' },
+                        { role: 'user', content: prompt }
+                    ],
                     response_format: { type: "json_object" }
                 })
             });
-            if (!response.ok) throw new Error(\`OpenAI API error: \${response.statusText}\`);
+            if (!response.ok) {
+                const errorBody = await response.text();
+                throw new Error(`OpenAI API error: ${response.status} ${response.statusText} - ${errorBody}`);
+            }
             const data = await response.json();
+            console.log("OpenAI API Response:", data); // Log the full response for debugging
+            if (!data.choices || data.choices.length === 0 || !data.choices[0].message.content) {
+                throw new Error("Invalid response structure from OpenAI API.");
+            }
             const aiResponse = JSON.parse(data.choices[0].message.content);
             displayCallback(aiResponse);
         } catch (error) {
@@ -81,9 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     };
     
-    // --- Simple Lotto Generator ---
-    // ... (Code for the basic lotto generator remains the same)
-
     // --- AI Number Generation Features ---
     const dreamInput = document.getElementById('dream-input');
     const dreamBtn = document.getElementById('dream-btn');
@@ -102,16 +127,20 @@ document.addEventListener('DOMContentLoaded', () => {
         const displayDreamResult = (result) => {
             dreamResultContainer.style.display = 'block';
             dreamResult.innerHTML = '';
+
             if (!result || !result.numbers || !result.explanation) {
                 dreamExplanation.textContent = 'AI 응답 형식이 올바르지 않습니다.';
                 return;
             }
-            const sortedNumbers = result.numbers.sort((a, b) => a - b);
-            dreamResult.innerHTML = sortedNumbers.map(number => {
-                let color;
-                if (number <= 10) color = '#fbc400'; else if (number <= 20) color = '#69c8f2'; else if (number <= 30) color = '#ff7272'; else if (number <= 40) color = '#aaa'; else color = '#b0d840';
-                return \`<div class="number" style="background-color: \${color};">${number}</div>\`;
+
+            const sortedNumbers = [...result.numbers].sort((a, b) => a - b);
+            
+            const numbersHtml = sortedNumbers.map(number => {
+                const color = getLottoNumberColor(number);
+                return `<div class="number" style="background-color: ${color}; color: white; font-weight: bold; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 5px;">${number}</div>`;
             }).join('');
+
+            dreamResult.innerHTML = `<div style="display: flex; flex-wrap: wrap; justify-content: center;">${numbersHtml}</div>`;
             dreamExplanation.textContent = result.explanation;
             saveLottoResult(sortedNumbers, result.explanation);
         };
@@ -119,7 +148,7 @@ document.addEventListener('DOMContentLoaded', () => {
         dreamBtn.addEventListener('click', () => {
             const dreamText = dreamInput.value;
             if (!dreamText.trim()) { alert('꿈 내용을 입력해주세요.'); return; }
-            const dreamPrompt = \`사용자가 입력한 다음 꿈 내용을 분석해서, 한국의 로또 6/45 형식에 맞는 행운의 숫자 6개를 추천하고, 꿈과 숫자를 연관지어 흥미로운 해설을 1~2문장으로 덧붙여줘. 입력된 꿈: "\${dreamText}". 반드시 다음 JSON 형식으로 반환해줘: { "numbers": [n1, n2, n3, n4, n5, n6], "explanation": "해설" }\`;
+            const dreamPrompt = \`사용자가 입력한 다음 꿈 내용을 분석해서, 한국의 로또 6/45 형식에 맞는 행운의 숫자 6개를 추천하고, 꿈과 숫자를 연관지어 흥미로운 해설을 1~2문장으로 덧붙여줘. 입력된 꿈: \"\${dreamText}\". 반드시 다음 JSON 형식으로 반환해줘: { "numbers": [n1, n2, n3, n4, n5, n6], "explanation": "해설" }\`;
             callAI(dreamPrompt, displayDreamResult);
         });
 
@@ -141,11 +170,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 reportResultContainer.innerHTML = '<p>AI 리포트 생성에 실패했습니다. 응답 형식을 확인해주세요.</p>';
                 return;
             }
-            const sortedNumbers = result.numbers.sort((a, b) => a - b);
+            const sortedNumbers = [...result.numbers].sort((a, b) => a - b);
             const numbersHTML = sortedNumbers.map(number => {
-                let color;
-                if (number <= 10) color = '#fbc400'; else if (number <= 20) color = '#69c8f2'; else if (number <= 30) color = '#ff7272'; else if (number <= 40) color = '#aaa'; else color = '#b0d840';
-                return \`<div class="number" style="background-color: \${color};">${number}</div>\`;
+                const color = getLottoNumberColor(number);
+                return `<div class="number" style="background-color: ${color}; color: white; font-weight: bold; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 5px;">${number}</div>`;
             }).join('');
 
             reportResultContainer.innerHTML = \`
@@ -153,7 +181,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 <p><strong>행운 수치:</strong> \${result.luck_score}점 / 100점</p>
                 <p><strong>AI 행운 메시지:</strong> \${result.message}</p>
                 <p><strong>추천 번호 조합:</strong></p>
-                <div class="lotto-numbers">\${numbersHTML}</div>
+                <div class="lotto-numbers" style="display: flex; flex-wrap: wrap; justify-content: center;">\${numbersHTML}</div>
                 <p><strong>조합 분석:</strong> \${result.explanation}</p>
             \`;
             saveLottoResult(sortedNumbers, \`[주간 리포트] \${result.explanation}\`);
@@ -169,16 +197,6 @@ document.addEventListener('DOMContentLoaded', () => {
     // --- Firebase Save/Load Logic ---
     const loadSavedBtn = document.getElementById('load-saved-btn');
     const savedNumbersList = document.getElementById('saved-numbers-list');
-
-    const saveLottoResult = (numbers, explanation) => {
-        if (!db) { console.log("Firebase not configured. Skipping save."); return; }
-        db.collection("savedNumbers").add({
-            numbers: numbers,
-            explanation: explanation,
-            createdAt: firebase.firestore.FieldValue.serverTimestamp()
-        }).then(docRef => console.log("Result saved with ID: ", docRef.id))
-          .catch(error => console.error("Error saving result: ", error));
-    };
 
     if (loadSavedBtn) {
         loadSavedBtn.addEventListener('click', async () => {
@@ -196,11 +214,10 @@ document.addEventListener('DOMContentLoaded', () => {
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'saved-item';
                     const numbersHTML = item.numbers.map(number => {
-                        let color;
-                        if (number <= 10) color = '#fbc400'; else if (number <= 20) color = '#69c8f2'; else if (number <= 30) color = '#ff7272'; else if (number <= 40) color = '#aaa'; else color = '#b0d840';
-                        return \`<div class="number" style="background-color: \${color}; transform: scale(0.8);">${number}</div>\`;
+                        const color = getLottoNumberColor(number);
+                        return `<div class="number" style="background-color: \${color}; color: white; font-weight: bold; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 3px; font-size: 0.8rem;">\${number}</div>`;
                     }).join('');
-                    itemDiv.innerHTML = \`<div class="lotto-numbers">\${numbersHTML}</div><p>\${item.explanation}</p>\`;
+                    itemDiv.innerHTML = \`<div class="lotto-numbers" style="display: flex; flex-wrap: wrap; justify-content: center;">\${numbersHTML}</div><p>\${item.explanation}</p>\`;
                     savedNumbersList.appendChild(itemDiv);
                 });
             } catch (error) {

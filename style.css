@@ -413,6 +413,21 @@ footer {
     transition: background-color 0.3s, color 0.3s;
 }
 
+/* Banner Section */
+.banner-container div {
+    background-color: var(--form-input-bg) !important;
+    border-color: var(--form-input-border) !important;
+    transition: background-color 0.3s, border-color 0.3s;
+}
+
+.banner-container a {
+    color: var(--link-color) !important;
+}
+
+.banner-container a:hover {
+    color: var(--link-hover-color) !important;
+}
+
 .footer-container {
     max-width: 1200px;
     margin: 0 auto;
