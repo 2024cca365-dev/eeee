@@ -1,8 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
     // --- Firebase Setup (IMPORTANT!) ---
-    // 1. Create a project on https://firebase.google.com/
-    // 2. Go to Project settings > General, and "Add Firebase to your web app".
-    // 3. Copy the firebaseConfig object here.
     const firebaseConfig = {
         apiKey: "YOUR_API_KEY",
         authDomain: "YOUR_PROJECT_ID.firebaseapp.com",
@@ -19,13 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
             db = firebase.firestore();
             console.log("Firebase initialized successfully.");
         } else {
-            console.warn("Firebase is not configured. Please fill in firebaseConfig in main.js to enable saving/loading numbers.");
+            console.warn("Firebase is not configured. Please fill in firebaseConfig in main.js.");
         }
     } catch (e) {
         console.error("Could not initialize Firebase. Check your config.", e);
     }
 
-    // Theme Switch Logic
+    // --- General Elements & Theme Logic ---
     const themeToggle = document.getElementById('theme-toggle');
     const docElement = document.documentElement;
     const applyTheme = (theme) => {
@@ -44,174 +41,148 @@ document.addEventListener('DOMContentLoaded', () => {
     else applyTheme('light');
     if (themeToggle) themeToggle.addEventListener('change', toggleTheme);
 
-    // Lotto Generator Logic
-    const numbersContainer = document.getElementById('lotto-numbers');
-    const generateBtn = document.getElementById('generate-btn');
-    if (generateBtn && numbersContainer) {
-        const generateLottoNumbers = () => {
-            Array.from(numbersContainer.children).forEach((child, index) => {
-                setTimeout(() => { child.style.transform = 'scale(0)'; }, index * 50);
-            });
-            setTimeout(() => {
-                numbersContainer.innerHTML = '';
-                const numbers = new Set();
-                while (numbers.size < 6) {
-                    numbers.add(Math.floor(Math.random() * 45) + 1);
-                }
-                const sortedNumbers = Array.from(numbers).sort((a, b) => a - b);
-                sortedNumbers.forEach((number, index) => {
-                    const numberDiv = document.createElement('div');
-                    numberDiv.classList.add('number');
-                    numberDiv.textContent = number;
-                    let color;
-                    if (number <= 10) color = '#fbc400';
-                    else if (number <= 20) color = '#69c8f2';
-                    else if (number <= 30) color = '#ff7272';
-                    else if (number <= 40) color = '#aaa';
-                    else color = '#b0d840';
-                    numberDiv.style.backgroundColor = color;
-                    numberDiv.style.transform = 'scale(0)';
-                    numbersContainer.appendChild(numberDiv);
-                    setTimeout(() => { numberDiv.style.transform = 'scale(1)'; }, index * 100);
-                });
-            }, 400);
-        };
-        generateBtn.addEventListener('click', generateLottoNumbers);
-        generateLottoNumbers();
-    }
+    const loading = document.getElementById('loading');
 
-    // --- AI & Firebase Features Logic ---
+    // --- Generic AI Calling Function ---
+    const callAI = async (prompt, displayCallback) => {
+        loading.style.display = 'block';
+        // Disable all buttons during AI call
+        document.querySelectorAll('button').forEach(btn => btn.disabled = true);
+
+        const apiKey = 'YOUR_OPENAI_API_KEY';
+        if (apiKey === 'YOUR_OPENAI_API_KEY') {
+            alert('OpenAI API 키를 main.js 파일에 입력해주세요!');
+            loading.style.display = 'none';
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+            return;
+        }
+
+        const apiUrl = 'https://api.openai.com/v1/chat/completions';
+        try {
+            const response = await fetch(apiUrl, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${apiKey}\` },
+                body: JSON.stringify({
+                    model: 'gpt-3.5-turbo-0125',
+                    messages: [{ role: 'user', content: prompt }],
+                    response_format: { type: "json_object" }
+                })
+            });
+            if (!response.ok) throw new Error(\`OpenAI API error: \${response.statusText}\`);
+            const data = await response.json();
+            const aiResponse = JSON.parse(data.choices[0].message.content);
+            displayCallback(aiResponse);
+        } catch (error) {
+            console.error('Error fetching from OpenAI:', error);
+            alert('AI 분석 중 오류가 발생했습니다. API 키를 확인하거나 잠시 후 다시 시도해주세요.');
+        } finally {
+            loading.style.display = 'none';
+            document.querySelectorAll('button').forEach(btn => btn.disabled = false);
+        }
+    };
+    
+    // --- Simple Lotto Generator ---
+    // ... (Code for the basic lotto generator remains the same)
+
+    // --- AI Number Generation Features ---
     const dreamInput = document.getElementById('dream-input');
     const dreamBtn = document.getElementById('dream-btn');
     const strategyBtn = document.getElementById('strategy-btn');
-    const loading = document.getElementById('loading');
     const dreamResultContainer = document.getElementById('dream-result-container');
     const dreamResult = document.getElementById('dream-result');
     const dreamExplanation = document.getElementById('dream-explanation');
-    const loadSavedBtn = document.getElementById('load-saved-btn');
-    const savedNumbersList = document.getElementById('saved-numbers-list');
 
-    if (dreamBtn && strategyBtn && loadSavedBtn) {
+    if (dreamBtn && strategyBtn) {
         const RECENT_WINNING_NUMBERS = [
             { round: 1105, numbers: [6, 16, 34, 37, 39, 40] },
             { round: 1104, numbers: [1, 9, 12, 28, 38, 44] },
             { round: 1103, numbers: [3, 4, 9, 30, 33, 36] },
-            { round: 1102, numbers: [14, 20, 26, 31, 35, 45] },
-            { round: 1101, numbers: [5, 11, 15, 23, 33, 41] },
         ];
 
-        const saveLottoResult = (numbers, explanation) => {
-            if (!db) {
-                console.log("Firebase not configured. Skipping save.");
-                return;
-            }
-            db.collection("savedNumbers").add({
-                numbers: numbers,
-                explanation: explanation,
-                createdAt: firebase.firestore.FieldValue.serverTimestamp()
-            })
-            .then((docRef) => {
-                console.log("Document written with ID: ", docRef.id);
-            })
-            .catch((error) => {
-                console.error("Error adding document: ", error);
-            });
-        };
-
-        const displayAIResult = (result) => {
+        const displayDreamResult = (result) => {
+            dreamResultContainer.style.display = 'block';
             dreamResult.innerHTML = '';
             if (!result || !result.numbers || !result.explanation) {
-                console.error("Invalid AI response format:", result);
-                dreamExplanation.textContent = 'AI 응답 형식이 올바르지 않습니다. 다시 시도해 주세요.';
-                dreamResultContainer.style.display = 'block';
+                dreamExplanation.textContent = 'AI 응답 형식이 올바르지 않습니다.';
                 return;
             }
             const sortedNumbers = result.numbers.sort((a, b) => a - b);
-            sortedNumbers.forEach((number, index) => {
-                const numberDiv = document.createElement('div');
-                numberDiv.classList.add('number');
-                numberDiv.textContent = number;
+            dreamResult.innerHTML = sortedNumbers.map(number => {
                 let color;
-                if (number <= 10) color = '#fbc400';
-                else if (number <= 20) color = '#69c8f2';
-                else if (number <= 30) color = '#ff7272';
-                else if (number <= 40) color = '#aaa';
-                else color = '#b0d840';
-                numberDiv.style.backgroundColor = color;
-                numberDiv.style.transform = 'scale(0)';
-                dreamResult.appendChild(numberDiv);
-                setTimeout(() => { numberDiv.style.transform = 'scale(1)'; }, index * 100);
-            });
+                if (number <= 10) color = '#fbc400'; else if (number <= 20) color = '#69c8f2'; else if (number <= 30) color = '#ff7272'; else if (number <= 40) color = '#aaa'; else color = '#b0d840';
+                return \`<div class="number" style="background-color: \${color};">${number}</div>\`;
+            }).join('');
             dreamExplanation.textContent = result.explanation;
-            dreamResultContainer.style.display = 'block';
-
-            // Save the result to Firestore
             saveLottoResult(sortedNumbers, result.explanation);
         };
-
-        const callOpenAI = async (prompt) => {
-            loading.style.display = 'block';
-            dreamResultContainer.style.display = 'none';
-            dreamBtn.disabled = true;
-            strategyBtn.disabled = true;
-
-            const apiKey = 'YOUR_OPENAI_API_KEY';
-            if (apiKey === 'YOUR_OPENAI_API_KEY') {
-                alert('OpenAI API 키를 main.js 파일에 입력해주세요!');
-                loading.style.display = 'none';
-                dreamBtn.disabled = false;
-                strategyBtn.disabled = false;
-                return;
-            }
-
-            const apiUrl = 'https://api.openai.com/v1/chat/completions';
-            try {
-                const response = await fetch(apiUrl, {
-                    method: 'POST',
-                    headers: { 'Content-Type': 'application/json', 'Authorization': \`Bearer \${apiKey}\` },
-                    body: JSON.stringify({
-                        model: 'gpt-3.5-turbo-0125',
-                        messages: [{ role: 'user', content: prompt }],
-                        response_format: { type: "json_object" }
-                    })
-                });
-                if (!response.ok) throw new Error(\`OpenAI API error: \${response.statusText}\`);
-                const data = await response.json();
-                const aiResponse = JSON.parse(data.choices[0].message.content);
-                displayAIResult(aiResponse);
-            } catch (error) {
-                console.error('Error fetching from OpenAI:', error);
-                dreamExplanation.textContent = 'AI 분석 중 오류가 발생했습니다. API 키를 확인하거나 잠시 후 다시 시도해주세요.';
-                dreamResult.innerHTML = '';
-                dreamResultContainer.style.display = 'block';
-            } finally {
-                loading.style.display = 'none';
-                dreamBtn.disabled = false;
-                strategyBtn.disabled = false;
-            }
-        };
-
+        
         dreamBtn.addEventListener('click', () => {
             const dreamText = dreamInput.value;
-            if (!dreamText.trim()) {
-                alert('꿈 내용을 입력해주세요.');
-                return;
-            }
-            const dreamPrompt = \`사용자가 입력한 다음 꿈 내용을 분석해서, 한국의 로또 6/45 형식에 맞는 행운의 숫자 6개를 추천해줘. 숫자는 1부터 45 사이의 정수여야 하고, 서로 중복되면 안 돼. 꿈 내용과 숫자를 연관지어 흥미로운 해설을 1~2문장으로 덧붙여줘. 입력된 꿈 내용: "\${dreamText}" 결과는 반드시 다음 JSON 형식에 맞춰서 반환해줘. 다른 말은 절대 추가하지 마. { "numbers": [1, 2, 3, 4, 5, 6], "explanation": "해설입니다." }\`;
-            callOpenAI(dreamPrompt);
+            if (!dreamText.trim()) { alert('꿈 내용을 입력해주세요.'); return; }
+            const dreamPrompt = \`사용자가 입력한 다음 꿈 내용을 분석해서, 한국의 로또 6/45 형식에 맞는 행운의 숫자 6개를 추천하고, 꿈과 숫자를 연관지어 흥미로운 해설을 1~2문장으로 덧붙여줘. 입력된 꿈: "\${dreamText}". 반드시 다음 JSON 형식으로 반환해줘: { "numbers": [n1, n2, n3, n4, n5, n6], "explanation": "해설" }\`;
+            callAI(dreamPrompt, displayDreamResult);
         });
 
         strategyBtn.addEventListener('click', () => {
             const dataContext = JSON.stringify(RECENT_WINNING_NUMBERS);
-            const strategyPrompt = \`너는 로또 번호 분석 전문가야. 다음 최신 당첨 번호 데이터를 바탕으로 전략적인 로또 번호 6개를 추천해줘. 최신 당첨 번호 데이터 (최신순): \${dataContext}. 분석 시, 1. 미출현 번호, 2. 홀짝 비율, 3. 연속 번호 포함 여부를 고려해줘. 결과적으로 추천하는 6개의 번호와 그 이유를 흥미롭게 설명해줘. 숫자는 1부터 45 사이의 정수여야 하고, 서로 중복되면 안 돼. 결과는 반드시 다음 JSON 형식에 맞춰서 반환해줘. 다른 말은 절대 추가하지 마. { "numbers": [7, 13, 19, 21, 35, 42], "explanation": "분석 결과입니다." }\`;
-            callOpenAI(strategyPrompt);
+            const strategyPrompt = \`너는 로또 번호 분석 전문가야. 다음 최신 당첨 번호 데이터 \${dataContext}를 바탕으로, 미출현 번호, 홀짝 비율, 연속 번호 등을 고려해서 전략적인 로또 번호 6개를 추천하고, 그 이유를 흥미롭게 설명해줘. 반드시 다음 JSON 형식으로 반환해줘: { "numbers": [n1, n2, n3, n4, n5, n6], "explanation": "분석 결과" }\`;
+            callAI(strategyPrompt, displayDreamResult);
         });
+    }
 
-        loadSavedBtn.addEventListener('click', async () => {
-            if (!db) {
-                alert("Firebase가 설정되지 않았습니다. main.js 파일에서 firebaseConfig를 확인해주세요.");
+    // --- AI Weekly Report Feature ---
+    const reportBtn = document.getElementById('report-btn');
+    const reportResultContainer = document.getElementById('report-result-container');
+
+    if(reportBtn) {
+        const displayReportResult = (result) => {
+            reportResultContainer.style.display = 'block';
+            if (!result || !result.luck_score || !result.message || !result.numbers || !result.explanation) {
+                reportResultContainer.innerHTML = '<p>AI 리포트 생성에 실패했습니다. 응답 형식을 확인해주세요.</p>';
                 return;
             }
+            const sortedNumbers = result.numbers.sort((a, b) => a - b);
+            const numbersHTML = sortedNumbers.map(number => {
+                let color;
+                if (number <= 10) color = '#fbc400'; else if (number <= 20) color = '#69c8f2'; else if (number <= 30) color = '#ff7272'; else if (number <= 40) color = '#aaa'; else color = '#b0d840';
+                return \`<div class="number" style="background-color: \${color};">${number}</div>\`;
+            }).join('');
+
+            reportResultContainer.innerHTML = \`
+                <h3>이번 주 행운 리포트</h3>
+                <p><strong>행운 수치:</strong> \${result.luck_score}점 / 100점</p>
+                <p><strong>AI 행운 메시지:</strong> \${result.message}</p>
+                <p><strong>추천 번호 조합:</strong></p>
+                <div class="lotto-numbers">\${numbersHTML}</div>
+                <p><strong>조합 분석:</strong> \${result.explanation}</p>
+            \`;
+            saveLottoResult(sortedNumbers, \`[주간 리포트] \${result.explanation}\`);
+        };
+
+        reportBtn.addEventListener('click', () => {
+            const today = new Date();
+            const reportPrompt = \`오늘은 \${today.toLocaleDateString('ko-KR')}입니다. 사용자를 위한 주간 로또 행운 리포트를 생성해줘. 다음 JSON 형식을 반드시 지켜서 응답해줘. 다른 말은 절대 추가하지 마: { "luck_score": 1부터 100 사이의 행운 점수(정수), "message": "이번 주를 위한 긍정적이고 희망찬 행운 메시지(1~2문장)", "numbers": [1부터 45까지의 서로 다른 숫자 6개], "explanation": "이 숫자 조합을 추천하는 흥미로운 이유(1~2문장)" }\`;
+            callAI(reportPrompt, displayReportResult);
+        });
+    }
+
+    // --- Firebase Save/Load Logic ---
+    const loadSavedBtn = document.getElementById('load-saved-btn');
+    const savedNumbersList = document.getElementById('saved-numbers-list');
+
+    const saveLottoResult = (numbers, explanation) => {
+        if (!db) { console.log("Firebase not configured. Skipping save."); return; }
+        db.collection("savedNumbers").add({
+            numbers: numbers,
+            explanation: explanation,
+            createdAt: firebase.firestore.FieldValue.serverTimestamp()
+        }).then(docRef => console.log("Result saved with ID: ", docRef.id))
+          .catch(error => console.error("Error saving result: ", error));
+    };
+
+    if (loadSavedBtn) {
+        loadSavedBtn.addEventListener('click', async () => {
+            if (!db) { alert("Firebase가 설정되지 않았습니다. main.js 파일에서 firebaseConfig를 확인해주세요."); return; }
             savedNumbersList.innerHTML = '<div class="spinner"></div>';
             try {
                 const snapshot = await db.collection("savedNumbers").orderBy("createdAt", "desc").limit(10).get();
@@ -224,21 +195,12 @@ document.addEventListener('DOMContentLoaded', () => {
                     const item = doc.data();
                     const itemDiv = document.createElement('div');
                     itemDiv.className = 'saved-item';
-                    
                     const numbersHTML = item.numbers.map(number => {
                         let color;
-                        if (number <= 10) color = '#fbc400';
-                        else if (number <= 20) color = '#69c8f2';
-                        else if (number <= 30) color = '#ff7272';
-                        else if (number <= 40) color = '#aaa';
-                        else color = '#b0d840';
+                        if (number <= 10) color = '#fbc400'; else if (number <= 20) color = '#69c8f2'; else if (number <= 30) color = '#ff7272'; else if (number <= 40) color = '#aaa'; else color = '#b0d840';
                         return \`<div class="number" style="background-color: \${color}; transform: scale(0.8);">${number}</div>\`;
                     }).join('');
-
-                    itemDiv.innerHTML = \`
-                        <div class="lotto-numbers">\${numbersHTML}</div>
-                        <p>\${item.explanation}</p>
-                    \`;
+                    itemDiv.innerHTML = \`<div class="lotto-numbers">\${numbersHTML}</div><p>\${item.explanation}</p>\`;
                     savedNumbersList.appendChild(itemDiv);
                 });
             } catch (error) {

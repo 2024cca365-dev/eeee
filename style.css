@@ -797,3 +797,51 @@ footer {
     color: var(--form-label-color);
     margin: 0;
 }
+
+/* Report Section */
+.report-container {
+    margin-top: 40px;
+    padding-top: 20px;
+    border-top: 1px solid var(--form-input-border);
+}
+
+#report-btn {
+    background: linear-gradient(145deg, #20c997, #1ba882);
+    color: white;
+    padding: 14px 28px;
+    font-size: 18px;
+    font-weight: bold;
+    border: none;
+    border-radius: 12px;
+    cursor: pointer;
+    transition: all 0.3s;
+    box-shadow: 0 4px 15px rgba(32, 201, 151, 0.4);
+}
+
+#report-btn:hover {
+    box-shadow: 0 6px 20px rgba(32, 201, 151, 0.5);
+    transform: translateY(-2px);
+}
+
+#report-result-container {
+    margin-top: 20px;
+    background-color: var(--form-input-bg);
+    border-radius: 8px;
+    padding: 20px;
+    text-align: left;
+    border: 1px solid var(--form-input-border);
+}
+
+#report-result-container h3 {
+    margin-top: 0;
+    color: var(--h1-color);
+    text-align: center;
+    border-bottom: 1px solid var(--form-input-border);
+    padding-bottom: 10px;
+    margin-bottom: 15px;
+}
+
+#report-result-container .lotto-numbers {
+    justify-content: center;
+    margin-bottom: 20px;
+}
