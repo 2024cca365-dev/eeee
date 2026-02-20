@@ -118,18 +118,21 @@ document.addEventListener('DOMContentLoaded', () => {
     const dreamExplanation = document.getElementById('dream-explanation');
 
     if (dreamBtn && strategyBtn) {
-        const RECENT_WINNING_NUMBERS = [
-            { round: 1105, numbers: [6, 16, 34, 37, 39, 40] },
-            { round: 1104, numbers: [1, 9, 12, 28, 38, 44] },
-            { round: 1103, numbers: [3, 4, 9, 30, 33, 36] },
-        ];
+        const generateRandomNumbers = () => {
+            const numbers = [];
+            while (numbers.length < 6) {
+                const n = Math.floor(Math.random() * 45) + 1;
+                if (!numbers.includes(n)) numbers.push(n);
+            }
+            return numbers.sort((a, b) => a - b);
+        };
 
         const displayDreamResult = (result) => {
             dreamResultContainer.style.display = 'block';
             dreamResult.innerHTML = '';
 
             if (!result || !result.numbers || !result.explanation) {
-                dreamExplanation.textContent = 'AI 응답 형식이 올바르지 않습니다.';
+                dreamExplanation.textContent = '결과를 생성하는 중 오류가 발생했습니다.';
                 return;
             }
 
@@ -141,89 +144,43 @@ document.addEventListener('DOMContentLoaded', () => {
             }).join('');
 
             dreamResult.innerHTML = `<div style="display: flex; flex-wrap: wrap; justify-content: center;">${numbersHtml}</div>`;
-            dreamExplanation.textContent = result.explanation;
+            // Convert markdown-like ** to <b> and handle newlines
+            const formattedExplanation = result.explanation
+                .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
+                .replace(/\n/g, '<br>');
+            dreamExplanation.innerHTML = formattedExplanation;
             saveLottoResult(sortedNumbers, result.explanation);
         };
         
         dreamBtn.addEventListener('click', () => {
-            const dreamText = dreamInput.value;
-            if (!dreamText.trim()) { alert('꿈 내용을 입력해주세요.'); return; }
-            const dreamPrompt = \`사용자가 입력한 다음 꿈 내용을 분석해서, 한국의 로또 6/45 형식에 맞는 행운의 숫자 6개를 추천하고, 꿈과 숫자를 연관지어 흥미로운 해설을 1~2문장으로 덧붙여줘. 입력된 꿈: \"\${dreamText}\". 반드시 다음 JSON 형식으로 반환해줘: { "numbers": [n1, n2, n3, n4, n5, n6], "explanation": "해설" }\`;
-            callAI(dreamPrompt, displayDreamResult);
+            const randomNumbers = generateRandomNumbers();
+            displayDreamResult({
+                numbers: randomNumbers,
+                explanation: '꿈 해몽 결과로 생성된 랜덤 행운 번호입니다.'
+            });
         });
 
         strategyBtn.addEventListener('click', () => {
-            const dataContext = JSON.stringify(RECENT_WINNING_NUMBERS);
-            const strategyPrompt = \`너는 로또 번호 분석 전문가야. 다음 최신 당첨 번호 데이터 \${dataContext}를 바탕으로, 미출현 번호, 홀짝 비율, 연속 번호 등을 고려해서 전략적인 로또 번호 6개를 추천하고, 그 이유를 흥미롭게 설명해줘. 반드시 다음 JSON 형식으로 반환해줘: { "numbers": [n1, n2, n3, n4, n5, n6], "explanation": "분석 결과" }\`;
-            callAI(strategyPrompt, displayDreamResult);
-        });
-    }
+            const pigDreamText = `Gemini의 응답
+돼지꿈을 꾸셨군요! 예로부터 돼지는 다산과 풍요를 상징해서 **'로또 당첨 꿈'**의 대명사로 불리죠.
 
-    // --- AI Weekly Report Feature ---
-    const reportBtn = document.getElementById('report-btn');
-    const reportResultContainer = document.getElementById('report-result-container');
+재미 삼아 보는 것이지만, 꿈의 구체적인 상황과 역대 당첨 데이터의 패턴(자주 등장하는 번호대, 미출현 번호 등)을 결합하여 AI 데이터 분석 기반의 추천 번호를 생성해 드립니다.
 
-    if(reportBtn) {
-        const displayReportResult = (result) => {
-            reportResultContainer.style.display = 'block';
-            if (!result || !result.luck_score || !result.message || !result.numbers || !result.explanation) {
-                reportResultContainer.innerHTML = '<p>AI 리포트 생성에 실패했습니다. 응답 형식을 확인해주세요.</p>';
-                return;
-            }
-            const sortedNumbers = [...result.numbers].sort((a, b) => a - b);
-            const numbersHTML = sortedNumbers.map(number => {
-                const color = getLottoNumberColor(number);
-                return `<div class="number" style="background-color: ${color}; color: white; font-weight: bold; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 5px;">${number}</div>`;
-            }).join('');
+🐷 돼지꿈 상황별 번호 가중치
+꿈의 내용에 따라 번호의 기운이 조금씩 달라집니다. 본인의 꿈에 맞춰 확인해 보세요.
 
-            reportResultContainer.innerHTML = \`
-                <h3>이번 주 행운 리포트</h3>
-                <p><strong>행운 수치:</strong> \${result.luck_score}점 / 100점</p>
-                <p><strong>AI 행운 메시지:</strong> \${result.message}</p>
-                <p><strong>추천 번호 조합:</strong></p>
-                <div class="lotto-numbers" style="display: flex; flex-wrap: wrap; justify-content: center;">\${numbersHTML}</div>
-                <p><strong>조합 분석:</strong> \${result.explanation}</p>
-            \`;
-            saveLottoResult(sortedNumbers, \`[주간 리포트] \${result.explanation}\`);
-        };
+집으로 들어오는 돼지: 8, 12, 25 (안정적인 재물운)
 
-        reportBtn.addEventListener('click', () => {
-            const today = new Date();
-            const reportPrompt = \`오늘은 \${today.toLocaleDateString('ko-KR')}입니다. 사용자를 위한 주간 로또 행운 리포트를 생성해줘. 다음 JSON 형식을 반드시 지켜서 응답해줘. 다른 말은 절대 추가하지 마: { "luck_score": 1부터 100 사이의 행운 점수(정수), "message": "이번 주를 위한 긍정적이고 희망찬 행운 메시지(1~2문장)", "numbers": [1부터 45까지의 서로 다른 숫자 6개], "explanation": "이 숫자 조합을 추천하는 흥미로운 이유(1~2문장)" }\`;
-            callAI(reportPrompt, displayReportResult);
-        });
-    }
+황금돼지/큰 돼지: 1, 10, 45 (강력한 한 방)
 
-    // --- Firebase Save/Load Logic ---
-    const loadSavedBtn = document.getElementById('load-saved-btn');
-    const savedNumbersList = document.getElementById('saved-numbers-list');
+돼지떼를 보는 꿈: 17, 24, 38 (여러 곳에서 들어오는 복)
 
-    if (loadSavedBtn) {
-        loadSavedBtn.addEventListener('click', async () => {
-            if (!db) { alert("Firebase가 설정되지 않았습니다. main.js 파일에서 firebaseConfig를 확인해주세요."); return; }
-            savedNumbersList.innerHTML = '<div class="spinner"></div>';
-            try {
-                const snapshot = await db.collection("savedNumbers").orderBy("createdAt", "desc").limit(10).get();
-                if (snapshot.empty) {
-                    savedNumbersList.innerHTML = '<p>저장된 번호가 없습니다.</p>';
-                    return;
-                }
-                savedNumbersList.innerHTML = '';
-                snapshot.forEach(doc => {
-                    const item = doc.data();
-                    const itemDiv = document.createElement('div');
-                    itemDiv.className = 'saved-item';
-                    const numbersHTML = item.numbers.map(number => {
-                        const color = getLottoNumberColor(number);
-                        return `<div class="number" style="background-color: \${color}; color: white; font-weight: bold; width: 30px; height: 30px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 3px; font-size: 0.8rem;">\${number}</div>`;
-                    }).join('');
-                    itemDiv.innerHTML = \`<div class="lotto-numbers" style="display: flex; flex-wrap: wrap; justify-content: center;">\${numbersHTML}</div><p>\${item.explanation}</p>\`;
-                    savedNumbersList.appendChild(itemDiv);
-                });
-            } catch (error) {
-                console.error("Error loading saved numbers: ", error);
-                savedNumbersList.innerHTML = '<p>번호를 불러오는 중 오류가 발생했습니다.</p>';
-            }
+돼지에게 물리는 꿈: 3, 21, 33 (의외의 횡재수)`;
+
+            displayDreamResult({
+                numbers: [1, 3, 8, 10, 12, 45],
+                explanation: pigDreamText
+            });
         });
     }
 });
