@@ -153,6 +153,11 @@ document.addEventListener('DOMContentLoaded', () => {
         };
         
         dreamBtn.addEventListener('click', () => {
+            const dreamText = dreamInput.value.trim();
+            if (!dreamText || dreamText.length <= 10) {
+                alert('꿈 내용을 10글자 이상 더 자세히 써주세요!');
+                return;
+            }
             const randomNumbers = generateRandomNumbers();
             displayDreamResult({
                 numbers: randomNumbers,
@@ -161,7 +166,12 @@ document.addEventListener('DOMContentLoaded', () => {
         });
 
         strategyBtn.addEventListener('click', () => {
-            const pigDreamText = `Gemini의 응답
+            const dreamText = dreamInput.value.trim();
+            if (!dreamText || dreamText.length <= 5) {
+                alert('내용을 5글자 이상 더 추가해주세요!');
+                return;
+            }
+            const pigDreamText = `챗지피티의 답변
 돼지꿈을 꾸셨군요! 예로부터 돼지는 다산과 풍요를 상징해서 **'로또 당첨 꿈'**의 대명사로 불리죠.
 
 재미 삼아 보는 것이지만, 꿈의 구체적인 상황과 역대 당첨 데이터의 패턴(자주 등장하는 번호대, 미출현 번호 등)을 결합하여 AI 데이터 분석 기반의 추천 번호를 생성해 드립니다.
