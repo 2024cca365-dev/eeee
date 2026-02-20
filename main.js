@@ -131,25 +131,26 @@ document.addEventListener('DOMContentLoaded', () => {
             dreamResultContainer.style.display = 'block';
             dreamResult.innerHTML = '';
 
-            if (!result || !result.numbers || !result.explanation) {
+            if (!result || !result.explanation) {
                 dreamExplanation.textContent = '결과를 생성하는 중 오류가 발생했습니다.';
                 return;
             }
 
-            const sortedNumbers = [...result.numbers].sort((a, b) => a - b);
-            
-            const numbersHtml = sortedNumbers.map(number => {
-                const color = getLottoNumberColor(number);
-                return `<div class="number" style="background-color: ${color}; color: white; font-weight: bold; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 5px;">${number}</div>`;
-            }).join('');
+            if (result.numbers && result.numbers.length > 0) {
+                const sortedNumbers = [...result.numbers].sort((a, b) => a - b);
+                const numbersHtml = sortedNumbers.map(number => {
+                    const color = getLottoNumberColor(number);
+                    return `<div class="number" style="background-color: ${color}; color: white; font-weight: bold; width: 40px; height: 40px; border-radius: 50%; display: flex; align-items: center; justify-content: center; margin: 5px;">${number}</div>`;
+                }).join('');
+                dreamResult.innerHTML = `<div style="display: flex; flex-wrap: wrap; justify-content: center;">${numbersHtml}</div>`;
+                saveLottoResult(sortedNumbers, result.explanation);
+            }
 
-            dreamResult.innerHTML = `<div style="display: flex; flex-wrap: wrap; justify-content: center;">${numbersHtml}</div>`;
             // Convert markdown-like ** to <b> and handle newlines
             const formattedExplanation = result.explanation
                 .replace(/\*\*(.*?)\*\*/g, '<b>$1</b>')
                 .replace(/\n/g, '<br>');
             dreamExplanation.innerHTML = formattedExplanation;
-            saveLottoResult(sortedNumbers, result.explanation);
         };
         
         dreamBtn.addEventListener('click', () => {
@@ -188,7 +189,7 @@ document.addEventListener('DOMContentLoaded', () => {
 돼지에게 물리는 꿈: 3, 21, 33 (의외의 횡재수)`;
 
             displayDreamResult({
-                numbers: [1, 3, 8, 10, 12, 45],
+                numbers: [],
                 explanation: pigDreamText
             });
         });
